@@ -1,0 +1,381 @@
+<!-- image component -->
+<div id="image-scroll">
+  <div>
+    {{#each images as img, i}}
+      {{#if i === 0}}
+      <div class='image-container {{ classes[i] }}' >
+        <img src="{{ img }}" srcset="{{ srcset[i] }}" alt="{{ alts[i] }}" class="{{ img_classes[i] }}" 
+         size="{{ sizes }}" ref:active>
+      </div>
+      {{else}}
+      <div class='image-container {{ classes[i] }}'>
+        <img src="{{ img }}"  srcset="{{ srcset[i] }}" alt="{{ alts[i] }}" class="{{ img_classes[i] }}"
+        sizes="{{ sizes }}">
+      </div>
+      {{/if}}
+    {{/each}}
+  </div>
+  <span class="controls">
+    <span class="prev" on:click="prev()">
+      <i class="fa fa-chevron-circle-left fa-3x"></i>
+    </span>
+    {{#if paused}}
+    <span class="play" on:click="start()">
+      <i class="fa fa-play-circle fa-3x"></i>
+    </span>
+    {{/if}}
+    {{#if !paused}}
+    <span class="pause" on:click="stop()">
+      <i class="fa fa-pause-circle fa-3x"></i>
+    </span>
+    {{/if}}
+    <span class="next" on:click="next()">
+      <i class="fa fa-chevron-circle-right fa-3x"></i>
+    </span>
+  </span>
+</div>
+
+<style>
+/* image container styles */
+#image-scroll {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+#image-scroll > div {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#image-scroll div .image-container {
+  display: flex;
+  flex: 1 0 100%;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+}
+/* Landscape image default*/
+#image-scroll img {
+  /*min-height: 100%;*/
+  width: 100%;
+  max-width: 100%; /* huh */
+  position: absolute;
+}
+/* portrait image */
+#image-scroll img.portrait {
+  height: 100%;
+  width: auto;
+  
+}
+
+/* image switching styles */
+.fade {
+  opacity: 0;
+  transition: opacity .75s;
+}
+.fade.active {
+  opacity: 1;
+  transition: opacity .75s;
+}
+
+.slide.prev {
+  left: -100%;
+  transition: left .75s;
+}
+.slide.active {
+  z-index: 2;
+  left: 0;
+  transition: left .75s;
+}
+.slide.next {
+  left: 100%;
+  transition: left .75s;
+}
+
+/* image scroll controls styles */
+.fa {
+  cursor: pointer;
+}
+#image-scroll .controls {
+  position: absolute;
+  display: flex;
+  bottom: 0;
+  height: 55%;
+  width: 100%;
+  text-align: center;
+  z-index: 10;
+}
+#image-scroll .play, 
+#image-scroll .pause {
+  flex: 1 0 90%;
+  align-self: flex-end;
+  display: inline-block;
+  opacity: 0;
+}
+#image-scroll .pause {
+}
+#image-scroll .controls .next,
+#image-scroll .controls .prev {
+  align-self: flex-start;
+  flex: 0 1 5%;
+  opacity: 0;
+}
+#image-scroll .controls span:hover {
+  opacity: 1;
+}
+</style>
+
+<script>
+  export default {
+    oncreate() {
+      let url = this.get("url");
+      if (url) {
+        this.getImages();
+      } else {
+        this.setup();
+      }
+      if (this.get("autostart")) {
+        this.start();
+      }
+    },
+
+    ondestroy() {
+      this.stop();
+    },
+
+    methods: {
+      setup: function() {
+        let a = this.get("alts");
+        let c = this.get("classes");
+        let imgs = this.get("images");
+        // update the alt text array to have empty string not 'undefined'.
+        if (a.length !== imgs.length) {
+          a = imgs.map((v,i) => {
+            if (a[i] === undefined) {
+              return '';
+            }
+            return a[i];
+          });
+          this.set({alts: a});
+        }
+        // update classes to have empty strings not 'undefined'.
+        if (c.length !== imgs.length) {
+          c = imgs.map((v,i) => {
+            if (c[i] === undefined) {
+              return this.get("transition"); // set the transition class.
+            }
+            return c[i] + " " + this.get("transition");
+          });
+          this.set({classes: c});
+        } else {
+          c.forEach((v, i) => {
+            c[i] += " " + this.get("transition");
+          });
+          this.set({classes: c});
+        }
+        this.setImage();
+        this.setPrev();
+        this.setNext();
+      },
+
+      /* set the 'active' image (first) */
+      setImage: function () {
+        let c = this.get("classes");
+        let image = this.refs.active.srcset;
+        let i = this.get("images").indexOf(image);
+        this.addClass(i, "active");
+        this.set({image: image});
+      },
+
+      prev: function () {
+        this.selectImage("prev");
+      },
+      
+      next: function () {
+        this.selectImage("next");
+      },
+
+      selectImage: function (img) {
+        let image = 0;
+        let prev = [], next = [], current = [];
+        let i = this.get("images");
+        let c = this.get("classes");
+        // get array indices of relevant images. 
+        let current_image = i.indexOf(this.get("image"));
+        let next_image = (current_image + 1 < i.length) ? current_image + 1 : 0;
+        let prev_image = (current_image - 1 >= 0) ? current_image - 1 : i.length - 1;
+
+        if (img.toLowerCase() === "next") {
+          next.push("active", "next");
+          current.push("active", "prev");
+          prev.push("prev");
+          image = next_image;
+        } else if (img.toLowerCase() === "prev") {
+          next.push("next");
+          current.push("active", "next");
+          prev.push("active", "prev");
+          image = prev_image;
+        } else if (typeof(img) === "number") {
+          if (img < i.length) {
+            current_image = img;
+            next_image = (img + 1 < i.length) ? img + 1 : 0;
+            prev_image = (img - 1 >= 0) ? img - 1 : i.length - 1;
+            image = img;
+          }
+          console.error('invalid input');
+          return -1;
+        } else {
+          console.error('invalid input');
+          return -1;
+        }
+
+        // update the classes for each image.
+        this.updateClasses(next_image, next);
+        this.updateClasses(current_image, current);
+        this.updateClasses(prev_image, prev);
+
+        // set the updated images.
+        this.set({image: i[image]});
+        this.setNext();
+        this.setPrev();
+      },
+
+      stop: function () {
+        clearInterval(this.interval);
+        this.set({paused: true});
+      },
+
+      start: function () {
+        this.interval = setInterval( () => {
+          this.next();
+        }, this.get('timer_length'));
+        this.set({paused: false});
+      },
+
+      setPrev: function () {
+        if (this.get("images").length > 1) {
+          let imgs = this.get('images');
+          let i = imgs.indexOf(this.get('image'));
+          let img = (i === 0) ? imgs[imgs.length - 1] : imgs[i - 1];
+          this.set({prev: img});
+          this.addClass(imgs.indexOf(img), 'prev');
+        }
+      },
+
+      setNext: function () {
+        if (this.get("images").length > 1) {
+          let imgs = this.get('images');
+          let i = imgs.indexOf(this.get('image')) + 1;
+          let img = (i < imgs.length) ? imgs[i] : imgs[0];
+          this.set({next: img});
+          this.addClass(imgs.indexOf(img), 'next');
+        }
+      },
+
+      // add single class to specific index. (number, string)
+      addClass: function (index, class_name) {
+        let i = this.get('images');
+        let c = this.get('classes');
+        // check if its already there to prevent dupes.
+        if (c[index].indexOf(class_name) === -1) {
+          c[index] += " " + class_name;
+          c[index] = c[index].trim();
+          this.set({classes: c});
+        }
+      },
+      
+      // remove single class from specific index. (number, string)
+      removeClass: function (index, class_name) {
+        let i = this.get('images');
+        let c = this.get('classes');
+        if (c[index].indexOf(class_name) > -1) {
+          let r = new RegExp("(^|\\s)" + class_name + "(\\s|$)");
+          let t = c[index].replace(r, ' ');
+          c[index] = t.trim();
+          this.set({classes: c});
+        }
+      },
+
+      // update classes at specific index. (number, array)
+      updateClasses: function (index, classes) {
+        let c_all = this.get("classes");
+        let c = c_all[index];
+        classes.forEach(v => {
+          if (c.indexOf(v) >= 0) {
+            this.removeClass(index, v);
+            return;
+          }
+          this.addClass(index, v);
+          return;
+        });
+      },
+      getImages: function() {
+        let url = this.get("url");
+        let xhr = new XMLHttpRequest();
+        let json_content;
+        xhr.open('GET', url);
+        let self = this;
+        xhr.onload = function() {
+          json_content = JSON.parse(this.responseText);
+          self.setImages(json_content, this.responseURL);
+        };
+        xhr.error = function() {
+        };
+        xhr.send();
+      },
+      setImages: function(data, url) {
+        let host = url.split('/');
+        let h = [host[0], host[1], host[2]].join('/');
+        if (data.images) {
+          let imgs = [];
+          let srcset = []
+          let c = [];
+          data.images.forEach( (v) => {
+            if (v.sizes) {
+              let str = v.url;
+              for (var s in v.sizes) {
+                str += ", " + v.sizes[s];
+              }
+              srcset.push(str);
+              imgs.push(v.sizes.med);
+            } else {
+              srcset.push(h + v.url);
+              imgs.push(v.url);
+            }
+            if (v.layout) {
+              c.push(v.layout);
+            }
+          });
+          this.set({srcset: srcset, images: imgs, img_classes: c});
+          this.setup();
+        }
+      },
+    },
+
+    data () {
+      return {
+        images: ["./images/default.jpg", "./images/default2.jpg", "./images/default3.jpg"],
+        url: '',
+        srcset: [],
+        sizes: [],
+        alts: ["","",""],
+        classes: [],
+        img_classes: [],
+        image: "",
+        timer_length: 4000,
+        next: "",
+        prev: "",
+        paused: true,
+        transition: "fade",
+        autostart: false,
+      };
+    },
+  };
+</script>
