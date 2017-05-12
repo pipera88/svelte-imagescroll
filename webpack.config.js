@@ -75,7 +75,7 @@ if (ENV === "production") {
     ]
   });
 } else {
-  config = merge(common, {
+  config = {
     devtool: 'source-map',
     entry: [
       "./src/index.js",
@@ -103,7 +103,7 @@ if (ENV === "production") {
         }
       ]
     }
-  });
+  };
 }
 
 module.exports = config;
