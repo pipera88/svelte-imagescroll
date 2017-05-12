@@ -1,5 +1,6 @@
 var path = require("path");
 var webpack = require("webpack");
+var HtmlWebpackPlugin = require("html-webpack-plugin");
 var merge = require("webpack-merge");
 var ENV = process.env.NODE_ENV || "develelopment";
 
@@ -42,8 +43,8 @@ var common = {
   },
 
   plugins: [
-    new webpack.optimize.CommonsChunkPlugin({
-      name: ["polyfills", "vendor"].reverse()
+    new HtmlWebpackPlugin({
+      chunksSortMode: "dependency"
     })
   ]
 };
@@ -51,6 +52,8 @@ var common = {
 var config;
 if (ENV === "production") {
   config = merge(common, {
+    devtool: "cheap-source-map",
+
     plugins: [
       new webpack.optimize.UglifyJsPlugin({
         beautify: false,
@@ -64,20 +67,42 @@ if (ENV === "production") {
         "process.env": {
           "NODE_ENV": JSON.stringify("production")
         }
+      }),
+
+      new webpack.optimize.CommonsChunkPlugin({
+        name: ["polyfills", "vendor"].reverse()
       })
     ]
   });
 } else {
   config = merge(common, {
-    devtool: "cheap-module-source-map",
-
+    devtool: 'source-map',
     entry: [
       "./src/index.js",
+      "webpack/hot/dev-server",
+      "webpack-dev-server/client?http://localhost:8090"
     ],
-    
-    plugins: [
+    output: {
+      filename: "bundle.js",
+      publicPath: '/dist/',
+      path: path.resolve(__dirname, "dist")
+    },
+    plugins:[
       new webpack.HotModuleReplacementPlugin()
-    ]
+    ],
+    module: {
+      rules: [
+        {
+          test: /\.(html|svelte)$/,
+          exclude: /node_modules/,
+          use: "svelte-loader"
+        },
+        {
+          test: /\.(js|jsx)$/,
+          use: "babel-loader"
+        }
+      ]
+    }
   });
 }
 

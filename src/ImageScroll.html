@@ -17,20 +17,20 @@
   </div>
   <span class="controls">
     <span class="prev" on:click="prev()">
-      <i class="fa fa-chevron-circle-left fa-3x"></i>
+      <i class="fa fa-chevron-left fa-3x"></i>
     </span>
     {{#if paused}}
     <span class="play" on:click="start()">
-      <i class="fa fa-play-circle fa-3x"></i>
+      <i class="fa fa-play fa-2x"></i>
     </span>
     {{/if}}
     {{#if !paused}}
     <span class="pause" on:click="stop()">
-      <i class="fa fa-pause-circle fa-3x"></i>
+      <i class="fa fa-pause fa-2x"></i>
     </span>
     {{/if}}
     <span class="next" on:click="next()">
-      <i class="fa fa-chevron-circle-right fa-3x"></i>
+      <i class="fa fa-chevron-right fa-3x"></i>
     </span>
   </span>
 </div>
@@ -188,8 +188,12 @@
       /* set the 'active' image (first) */
       setImage: function () {
         let c = this.get("classes");
-        let image = this.refs.active.srcset;
+        let image = this.refs.active.src;
         let i = this.get("images").indexOf(image);
+        if (i < 0) {
+          i = 0;
+          image = this.get("images")[0];
+        }
         this.addClass(i, "active");
         this.set({image: image});
       },
@@ -331,8 +335,8 @@
         xhr.send();
       },
       setImages: function(data, url) {
-        let host = url.split('/');
-        let h = [host[0], host[1], host[2]].join('/');
+        //let host = url.split('/');
+        //let h = [host[0], host[1], host[2]].join('/');
         if (data.images) {
           let imgs = [];
           let srcset = []
@@ -361,7 +365,7 @@
 
     data () {
       return {
-        images: ["./images/default.jpg", "./images/default2.jpg", "./images/default3.jpg"],
+        images: [],
         url: '',
         srcset: [],
         sizes: [],
