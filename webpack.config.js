@@ -68,10 +68,6 @@ if (ENV === "production") {
           "NODE_ENV": JSON.stringify("production")
         }
       }),
-
-      new webpack.optimize.CommonsChunkPlugin({
-        name: ["polyfills", "vendor"].reverse()
-      })
     ]
   });
 } else {
