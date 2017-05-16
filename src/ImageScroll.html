@@ -41,6 +41,7 @@
   width: 100%;
   height: 100%;
   position: relative;
+  background-color: #424242;
 }
 #image-scroll > div {
   overflow: hidden;
@@ -56,7 +57,7 @@
   flex: 1 0 100%;
   align-items: center;
   justify-content: center;
-  background-color: white;
+  background-color: #424242;
   height: 100%;
   width: 100%;
   position: absolute;
@@ -342,16 +343,16 @@
           let srcset = []
           let c = [];
           data.images.forEach( (v) => {
-            if (v.sizes) {
-              let str = v.url;
-              for (var s in v.sizes) {
-                str += ", " + v.sizes[s];
+            imgs.push(v.url);
+            if (v.srcset) {
+              //let str = v.url + v.width + 'w';
+              let str = `${v.url} ${v.width}w`;
+              for (var s in v.srcset) {
+                str += ", " + v.srcset[s];
               }
               srcset.push(str);
-              imgs.push(v.sizes.med);
             } else {
               srcset.push(h + v.url);
-              imgs.push(v.url);
             }
             if (v.layout) {
               c.push(v.layout);
