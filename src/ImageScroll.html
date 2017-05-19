@@ -64,9 +64,8 @@
 }
 /* Landscape image default*/
 #image-scroll img {
-  /*min-height: 100%;*/
   width: 100%;
-  max-width: 100%; /* huh */
+  max-width: 100%;
   position: absolute;
   height: auto;
 }
@@ -336,8 +335,6 @@
         xhr.send();
       },
       setImages: function(data, url) {
-        //let host = url.split('/');
-        //let h = [host[0], host[1], host[2]].join('/');
         if (data.images) {
           let imgs = [];
           let srcset = []
@@ -345,7 +342,6 @@
           data.images.forEach( (v) => {
             imgs.push(v.url);
             if (v.srcset) {
-              //let str = v.url + v.width + 'w';
               let str = `${v.url} ${v.width}w`;
               for (var s in v.srcset) {
                 str += ", " + v.srcset[s];
@@ -374,6 +370,7 @@
         classes: [],
         img_classes: [],
         image: "",
+        current: 0,
         timer_length: 4000,
         next: "",
         prev: "",
